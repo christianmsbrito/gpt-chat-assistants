@@ -1,0 +1,84 @@
+{
+    "services": [
+      {
+        "id": 1,
+        "name": "Basic Car Wash",
+        "description": "Includes exterior washing, drying, and tire cleaning.",
+        "availability": "Walk-ins accepted; no appointment needed."
+      },
+      {
+        "id": 2,
+        "name": "Full Service Detailing",
+        "description": "Exterior and interior cleaning, waxing, and vacuuming.",
+        "availability": "Appointment required, available Monday to Friday, 9 AM to 5 PM."
+      },
+      {
+        "id": 3,
+        "name": "Interior Detailing",
+        "description": "Comprehensive cleaning of seats, carpets, mats, and interior windows.",
+        "availability": "Appointment required, available Monday to Saturday, 10 AM to 4 PM."
+      },
+      {
+        "id": 4,
+        "name": "Exterior Detailing",
+        "description": "High-quality washing, waxing, and polishing of the car's exterior.",
+        "availability": "Appointment required, available Monday to Saturday, 10 AM to 4 PM."
+      },
+      {
+        "id": 5,
+        "name": "Paint Protection",
+        "description": "Application of protective coatings to preserve car paint.",
+        "availability": "Appointment required, booking two weeks in advance recommended."
+      }
+    ],
+    "pricing": [
+      {
+        "serviceId": 1,
+        "price": "$25",
+        "details": "Basic Car Wash service"
+      },
+      {
+        "serviceId": 2,
+        "price": "$150",
+        "details": "Full Service Detailing package"
+      },
+      {
+        "serviceId": 3,
+        "price": "$100",
+        "details": "Interior Detailing package"
+      },
+      {
+        "serviceId": 4,
+        "price": "$120",
+        "details": "Exterior Detailing package"
+      },
+      {
+        "serviceId": 5,
+        "price": "Starting at $200",
+        "details": "Paint Protection service"
+      }
+    ],
+    "businessInfo": {
+      "location": "1234 Sparkle Drive, Clean City, CC 12345",
+      "hours": "Monday to Saturday, 9 AM - 6 PM",
+      "contact": "Phone: (123) 456-7890, Email: info@cleancars.com, Website: www.cleancars.com"
+    },
+    "faqs": [
+      {
+        "question": "How long does a full service detailing take?",
+        "answer": "Typically, it takes about 3-4 hours."
+      },
+      {
+        "question": "Do you offer any discounts?",
+        "answer": "Yes, we offer a 10% discount for repeat customers."
+      },
+      {
+        "question": "Can I book services online?",
+        "answer": "Yes, services can be booked through our website."
+      },
+      {
+        "question": "Is there a cancellation policy?",
+        "answer": "Cancellations should be made at least 24 hours in advance."
+      }
+    ]
+  }
