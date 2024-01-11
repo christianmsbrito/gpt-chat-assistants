@@ -39,7 +39,7 @@ function authorize(credentials, callback) {
 function getAccessToken(oAuth2Client, callback) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: ["https://www.googleapis.com/auth/calendar.readonly"],
+    scope: ["https://www.googleapis.com/auth/calendar.events"],
   });
   console.log("Authorize this app by visiting this url:", authUrl);
   const rl = readline.createInterface({
@@ -136,6 +136,44 @@ async function listEventsByDate(
   }
 }
 
+/**
+ * Adds a new event to the user's primary calendar.
+ * @param {Object} auth - The authorized OAuth2 client.
+ * @param {string} summary - The summary or title of the event.
+ * @param {Date} start - The start date and time of the event.
+ * @param {Date} end - The end date and time of the event.
+ * @param {string} [description] - The description of the event. Optional.
+ * @param {string} [location] - The location of the event. Optional.
+ */
+async function addEvent(auth, summary, start, end, description = null, location = null) {
+  const calendar = google.calendar({ version: "v3", auth });
+
+  const event = {
+    summary: summary,
+    start: {
+      dateTime: start.toISOString(),
+    },
+    end: {
+      dateTime: end.toISOString(),
+    },
+    description: description,
+    location: location,
+  };
+
+  try {
+    const response = await calendar.events.insert({
+      calendarId: "primary",
+      resource: event,
+    });
+
+    console.log("Event added successfully:");
+    console.log(response.data);
+  } catch (error) {
+    console.error("Error adding event:", error);
+  }
+}
+
+
 // ...
 
 // Define the authorize, getAccessToken, and listEvents functions here...
@@ -215,6 +253,21 @@ const server = http.createServer(async (req, res) => {
         res.statusCode = 200;
         res.setHeader("Content-Type", "application/json");
         res.end(JSON.stringify({ events }));
+      });
+    } else if(req.method === "POST" && req.url.startsWith("/events")) {
+      const body = [];
+      req.on("data", (chunk) => {
+        body.push(chunk);
+      }).on("end", () => {
+        const bodyString = Buffer.concat(body).toString();
+        const bodyParams = JSON.parse(bodyString);
+        const { summary, start, end, description, location } = bodyParams;
+        authorize(credentials, async (auth) => {
+          await addEvent(auth, summary, new Date(start), new Date(end), description, location);
+          res.statusCode = 200;
+          res.setHeader("Content-Type", "text/plain");
+          res.end("Event added successfully");
+        });
       });
     } else if (req.method === "GET" && req.url.startsWith("/")) {
       const queryObject = url.parse(req.url, true).query;
