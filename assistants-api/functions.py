@@ -4,6 +4,7 @@ import os
 from openai import OpenAI
 from prompts import assistant_instructions
 import datetime
+from datetime import datetime, timedelta, date
 
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 
@@ -46,12 +47,27 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 def current_date():
   print("Getting today's date...")
-  return { "today": datetime.date.today().strftime("%m-%d-%Y") }
+  return { "today": date.today().strftime("%m-%d-%Y")}
 
 def check_scheduled_events(inquiry_start_date, inquiry_end_date=None):
+  print("Checking scheduled events with parameters: ", inquiry_start_date, inquiry_end_date)
   return requests.get('http://localhost:3000/events', params={
       'inquiryStartDate': inquiry_start_date,
       'inquiryEndDate': inquiry_end_date
+    }).json()
+
+def schedule_event(service_name, service_schedule_date, service_schedule_time):
+  print("Scheduling event with parameters: ", service_name, service_schedule_date, service_schedule_time)
+  # Parse service_schedule_date and service_schedule_time into a single datetime object
+  schedule_datetime = datetime.strptime(service_schedule_date + ' ' + service_schedule_time, '%m-%d-%Y %H:%M')
+
+  # Calculate the end time by adding 1 hour to the start time
+  end_datetime = schedule_datetime + timedelta(hours=1)
+
+  return requests.post('http://localhost:3000/events', json={
+      'summary': service_name,
+      'start': schedule_datetime.strftime('%Y-%m-%d %H:%M:%S'),
+      'end': end_datetime.strftime('%Y-%m-%d %H:%M:%S')
     }).json()
 
 def create_assistant(client):
@@ -101,10 +117,35 @@ def create_assistant(client):
                     },
                     "inquiry_end_date": {
                       "type": "string",
-                      "description": "An optional date like string for the limit date inquiry date with format MM-DD-YYYY."
+                      "description": "An optional date like string for the limit date inquiry date with format MM-DD-YYYY. If not provided, the end date will be the the start date plus 1 week"
                     }
                   },
                   "required": ["inquiry_start_date"]
+                }
+              }
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "schedule_event",
+                "description": "Schedule a new event on the calendar for the date and time requested by the user. The user should provide the date and start time of the service they are willing to book, the end time is determined by the average duration of the service, or default to one hour duration from start time",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "service_name": {
+                      "type": "string",
+                      "description": "A date like string for the inquiry date with format MM-DD-YYYY."
+                    },
+                    "service_schedule_date": {
+                      "type": "string",
+                      "description": "A date like string that represents the date that the service is being schedule with format MM-DD-YYYY."
+                    },
+                    "service_schedule_time": {
+                      "type": "string",
+                      "description": "A string that represents the time that the service is being schedule with format HH:mm"
+                    }
+                  },
+                  "required": ["service_name", "service_schedule_date", "service_schedule_time"]
                 }
               }
             }
