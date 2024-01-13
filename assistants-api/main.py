@@ -26,8 +26,8 @@ app = Flask(__name__)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Create or load assistant
-assistant_id = functions.create_assistant(
-  client)  # this function comes from "functions.py"
+assistant_id = functions.create_assistant_from_config(
+  client, "car-service.json")  # this function comes from "functions.py"
 
 
 # Start conversation thread
