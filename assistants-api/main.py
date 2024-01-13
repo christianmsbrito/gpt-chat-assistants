@@ -42,77 +42,70 @@ def start_conversation():
 # Generate response
 @app.route('/chat', methods=['POST'])
 def chat():
-  data = request.json
-  thread_id = data.get('thread_id')
-  user_input = data.get('message', '')
+  try:
+    data = request.json
+    thread_id = data.get('thread_id')
+    user_input = data.get('message', '')
 
-  if not thread_id:
-    print("Error: Missing thread_id")
-    return jsonify({"error": "Missing thread_id"}), 400
+    if not thread_id:
+      print("Error: Missing thread_id")
+      return jsonify({"error": "Missing thread_id"}), 400
 
-  print(f"Received message: {user_input} for thread ID: {thread_id}")
+    print(f"Received message: {user_input} for thread ID: {thread_id}")
 
-  # Add the user's message to the thread
-  client.beta.threads.messages.create(thread_id=thread_id,
-                    role="user",
-                    content=user_input)
+    # Add the user's message to the thread
+    client.beta.threads.messages.create(thread_id=thread_id,
+                      role="user",
+                      content=user_input)
 
-  # Run the Assistant
-  run = client.beta.threads.runs.create(thread_id=thread_id,
-                      assistant_id=assistant_id)
+    # Run the Assistant
+    run = client.beta.threads.runs.create(thread_id=thread_id,
+                        assistant_id=assistant_id)
 
-  # Check if the Run requires action (function call)
-  while True:
-    run_status = client.beta.threads.runs.retrieve(thread_id=thread_id,
-                             run_id=run.id)
-    # print(f"Run status: {run_status.status}")
-    if run_status.status == 'completed':
-      break
-    elif run_status.status == 'requires_action':
-      # Handle the function call
-      for tool_call in run_status.required_action.submit_tool_outputs.tool_calls:
-        try:
-          if tool_call.function.name == "current_date":
-            # Process current date calculation
-            output = functions.current_date()
-            client.beta.threads.runs.submit_tool_outputs(thread_id=thread_id,
-                                   run_id=run.id,
-                                   tool_outputs=[{
-                                     "tool_call_id":
-                                     tool_call.id,
-                                     "output":
-                                     json.dumps(output)
-                                   }])
+    # Check if the Run requires action (function call)
+    while True:
+      run_status = client.beta.threads.runs.retrieve(thread_id=thread_id,
+                               run_id=run.id)
+      # print(f"Run status: {run_status.status}")
+      if run_status.status == 'completed':
+        break
+      elif run_status.status == 'requires_action':
+        # Handle the function call
+        function_handlers = {
+          "current_date": functions.current_date,
+          "check_scheduled_events": functions.check_scheduled_events,
+          "schedule_event": functions.schedule_event
+        }
 
-          if tool_call.function.name == "check_scheduled_events":
-            # Process solar panel calculations
-            arguments = json.loads(tool_call.function.arguments)
-            inquiry_start_date = arguments["inquiry_start_date"]
-            inquiry_end_date = arguments.get("inquiry_end_date")
-
-            if inquiry_end_date is None:
-              output = functions.check_scheduled_events(inquiry_start_date)
+        for tool_call in run_status.required_action.submit_tool_outputs.tool_calls:
+          try:
+            function_name = tool_call.function.name
+            if function_name in function_handlers:
+              arguments = json.loads(tool_call.function.arguments)
+              output = function_handlers[function_name](*arguments.values())
+              client.beta.threads.runs.submit_tool_outputs(thread_id=thread_id,
+                                    run_id=run.id,
+                                    tool_outputs=[{
+                                      "tool_call_id": tool_call.id,
+                                      "output": json.dumps(output)
+                                    }])
             else:
-              output = functions.check_scheduled_events(inquiry_start_date, inquiry_end_date)
-            client.beta.threads.runs.submit_tool_outputs(thread_id=thread_id,
-                                   run_id=run.id,
-                                   tool_outputs=[{
-                                     "tool_call_id":
-                                     tool_call.id,
-                                     "output":
-                                     json.dumps(output)
-                                   }])
-        except Exception as e:
-          print(f"Error occurred while processing function call: {e}")
-          return jsonify({"error": str(e)}), 500
+              print(f"Error: Unknown function '{function_name}'")
+              return jsonify({"error": f"Unknown function '{function_name}'"}), 400
+          except Exception as e:
+            print(f"Error occurred while processing function call: {e}")
+            return jsonify({"error": str(e)}), 500
+    # Retrieve and return the latest message from the assistant
+    messages = client.beta.threads.messages.list(thread_id=thread_id)
+    response = messages.data[0].content[0].text.value
 
-  # Retrieve and return the latest message from the assistant
-  messages = client.beta.threads.messages.list(thread_id=thread_id)
-  response = messages.data[0].content[0].text.value
+    print(f"Assistant response: {response}")
+    return jsonify({"response": response})
 
-  print(f"Assistant response: {response}")
-  return jsonify({"response": response})
-
+  except Exception as e:
+    client.beta.threads.runs.cancel(thread_id=thread_id, run_id=run.id)
+    print(f"Error occurred while processing chat request: {e}")
+    return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=8080)

@@ -265,8 +265,8 @@ const server = http.createServer(async (req, res) => {
         authorize(credentials, async (auth) => {
           await addEvent(auth, summary, new Date(start), new Date(end), description, location);
           res.statusCode = 200;
-          res.setHeader("Content-Type", "text/plain");
-          res.end("Event added successfully");
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ message: "Event added successfully" }));
         });
       });
     } else if (req.method === "GET" && req.url.startsWith("/")) {
