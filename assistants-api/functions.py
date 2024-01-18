@@ -11,40 +11,6 @@ OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 # Init OpenAI Client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-
-# Create or load assistant
-# def create_assistant(client, assistant_instructions, tools, file_path, model="gpt-4-1106-preview"):
-#   assistant_file_path = os.path.join(os.path.dirname(file_path), 'assistant.json')
-
-#   # If there is an assistant.json file already, then load that assistant
-#   if os.path.exists(assistant_file_path):
-#     with open(assistant_file_path, 'r') as file:
-#       assistant_data = json.load(file)
-#       assistant_id = assistant_data['assistant_id']
-#       print("Loaded existing assistant ID.")
-#   else:
-#     # If no assistant.json is present, create a new assistant using the provided specifications
-
-#     # Create knowledge base file
-#     file = client.files.create(file=open(file_path, "rb"), purpose='assistants')
-
-#     # Create assistant with specified instructions, model, and tools
-#     assistant = client.beta.assistants.create(
-#       instructions=assistant_instructions,
-#       model=model,
-#       tools=tools,
-#       file_ids=[file.id]
-#     )
-
-#     # Create a new assistant.json file to load on future runs
-#     with open(assistant_file_path, 'w') as file:
-#       json.dump({'assistant_id': assistant.id}, file)
-#       print("Created a new assistant and saved the ID.")
-
-#     assistant_id = assistant.id
-
-#   return assistant_id
-
 def current_date():
   print("Getting today's date...")
   return { "today": date.today().strftime("%m-%d-%Y")}
@@ -71,6 +37,16 @@ def schedule_event(service_name, service_schedule_date, service_schedule_time):
     }).json()
 
 def create_assistant_from_config(client, assistant_config_path):
+  """
+  Create an assistant based on the provided configuration.
+
+  Args:
+    client (object): The client object used to interact with the API.
+    assistant_config_path (str): The path to the assistant configuration file.
+
+  Returns:
+    str: The ID of the created or loaded assistant.
+  """
   with open(assistant_config_path, 'r') as config_file:
     assistant_config = json.load(config_file)
 
