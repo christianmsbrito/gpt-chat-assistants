@@ -1,7 +1,10 @@
 const google = require("googleapis").google;
 const fs = require("fs");
-const readline = require("readline");
 
+/**
+ * Authorizes the Google Calendar integration.
+ * @returns {google.auth.OAuth2} The authorized OAuth2 client.
+ */
 function authorize() {
   console.log("Authorizing Google Calendar...");
   const credentials = {
@@ -28,35 +31,11 @@ function authorize() {
 }
 
 /**
- * Get and store new token after prompting for user authorization, and then execute the given callback with the authorized OAuth2 client.
- */
-function getAccessToken(oAuth2Client, callback) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: ["https://www.googleapis.com/auth/calendar.events"],
-  });
-  console.log("Authorize this app by visiting this url:", authUrl);
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  rl.question("Enter the code from that page here: ", (code) => {
-    rl.close();
-    oAuth2Client.getToken(code, (err, token) => {
-      if (err) return console.error("Error retrieving access token", err);
-      oAuth2Client.setCredentials(token);
-      // Store the token to disk for later program executions
-      fs.writeFile("token.json", JSON.stringify(token), (err) => {
-        if (err) return console.error(err);
-        console.log("Token stored to", "token.json");
-      });
-      callback(oAuth2Client);
-    });
-  });
-}
-
-/**
  * Lists the next 10 events on the user's primary calendar.
+ */
+/**
+ * Lists upcoming events from the Google Calendar API.
+ * @param {Object} auth - The authentication credentials.
  */
 function listEvents(auth) {
   const calendar = google.calendar({ version: "v3", auth });

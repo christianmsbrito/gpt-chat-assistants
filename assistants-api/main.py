@@ -102,6 +102,15 @@ def add_user_message(thread_id, user_input):
 
 
 def run_assistant(thread_id):
+  """
+  Runs the assistant on the specified thread.
+
+  Args:
+    thread_id (str): The ID of the thread to run the assistant on.
+
+  Returns:
+    object: The response object from the assistant run.
+  """
   return client.beta.threads.runs.create(
     thread_id=thread_id,
     assistant_id=assistant_id
@@ -109,6 +118,16 @@ def run_assistant(thread_id):
 
 
 def get_run_status(thread_id, run_id):
+  """
+  Retrieves the status of a specific run in a thread.
+
+  Args:
+    thread_id (str): The ID of the thread.
+    run_id (str): The ID of the run.
+
+  Returns:
+    dict: The status of the run.
+  """
   return client.beta.threads.runs.retrieve(
     thread_id=thread_id,
     run_id=run_id
@@ -156,11 +175,27 @@ def handle_function_call(thread_id, run_id, tool_calls):
 
 
 def get_latest_message(thread_id):
+  """
+  Retrieves the latest message from a given thread.
+
+  Args:
+    thread_id (str): The ID of the thread.
+
+  Returns:
+    str: The content of the latest message.
+  """
   messages = client.beta.threads.messages.list(thread_id=thread_id)
   return messages.data[0].content[0].text.value
 
 
 def cancel_run(thread_id, run_id):
+  """
+  Cancel a specific run in a thread.
+
+  Args:
+    thread_id (str): The ID of the thread.
+    run_id (str): The ID of the run to cancel.
+  """
   client.beta.threads.runs.cancel(thread_id=thread_id, run_id=run_id)
 
 if __name__ == '__main__':
