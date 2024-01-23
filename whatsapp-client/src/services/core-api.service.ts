@@ -1,12 +1,11 @@
 import got, { Got, Method } from "got";
 import {
-  BotCommands,
-  IAssignToCampaignParams,
-  ICampaign,
-  IGetCampaignDetailsParams,
+  IChatRequest,
+  IChatResponse,
+  IStartNewThreadResponse,
 } from "../utils/interfaces";
 
-class CoreApiService implements BotCommands {
+export class CoreApiService {
   httpClient: Got;
   constructor(baseUrl: string, apiKey: string) {
     this.httpClient = got.extend({
@@ -31,41 +30,24 @@ class CoreApiService implements BotCommands {
     }).then(({ body = "{}" }) => JSON.parse(body) as T);
   }
 
-  async listCampaigns(): Promise<ICampaign[]> {
-    return this.makeRequest<ICampaign[]>({
-      method: "GET",
-      path: "campaigns",
-    });
-  }
-
-  async getCampaignDetails({
-    campaignName,
-  }: IGetCampaignDetailsParams): Promise<ICampaign> {
-    return this.makeRequest<ICampaign>({
-      method: "GET",
-      path: `campaigns/${campaignName}`,
-    });
-  }
-
-  async assignToCampaign({
-    campaignName,
-    userName,
-    quantity,
-    phoneNumber,
-  }: IAssignToCampaignParams): Promise<void> {
+  async generateChatResponse({
+    content,
+    threadId,
+  }: IChatRequest): Promise<IChatResponse> {
     return this.makeRequest({
       method: "POST",
-      path: `campaigns/${campaignName}/assign`,
+      path: "chat",
       body: {
-        phoneNumber,
-        userName: userName,
-        quantity: quantity,
+        "thread_id": threadId,
+        "message": content
       },
     });
   }
-}
 
-export const coreApiService = new CoreApiService(
-  process.env.CORE_API_URL || "",
-  process.env.BOT_API_KEY || ""
-);
+  async startNewThread(): Promise<IStartNewThreadResponse> {
+    return this.makeRequest({
+      method: "GET",
+      path: "start",
+    });
+  }
+}
