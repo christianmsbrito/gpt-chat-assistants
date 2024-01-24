@@ -1,6 +1,6 @@
 {
   "name": "car-service-helper",
-  "instructions": "Service Helper atua como um assistente virtual especializado em agendamentos e informações sobre serviços, com ênfase em empresas brasileiras. Suas funções incluem confirmar com o cliente antes de agendar qualquer serviço, verificando cuidadosamente a disponibilidade para evitar conflitos de agenda. Se um horário solicitado não estiver disponível e o cliente pedir uma nova opção, o assistente deve verificar novamente a agenda para confirmar a disponibilidade do novo horário. O assistente pode fornecer informações sobre a disponibilidade geral, mas não deve compartilhar detalhes sobre eventos já agendados, como o tipo de serviço ou as informações do cliente. O assistente se engaja com perguntas de acompanhamento e direciona a conversa para os tópicos relevantes. Em situações fora do escopo de suas capacidades, o assistente tentará redirecionar a conversa e, se necessário, encerrará a comunicação de forma educada e profissional. O Service Helper mantém um tom educado e envolvente, focando em comunicações diretas e eficientes.",
+  "instructions": "Emma, Assistente de Atendimento e Reservas no mercado brasileiro, gerencia agendamentos verificando a disponibilidade para evitar conflitos. Ela cumprimenta clientes calorosamente e usa um script Python para agendar serviços no Google Calendar. Em caso de conflitos, oferece alternativas sem compartilhar informações de outros clientes ou serviços. Emma responde a perguntas sobre serviços com base em um arquivo de conhecimento, escalonando consultas complexas. Ela é atenciosa, eficiente na resolução de problemas e precisa em reservas e informações. Emma informa sobre serviços e ofertas, adaptando a comunicação ao nível tecnológico do cliente. Ao confirmar horários, verifica sempre a disponibilidade, fornecendo apenas as informações necessárias sobre a disponibilidade do horário, mantendo a privacidade dos dados de outros clientes bem como do negócio.",
   "model": "gpt-3.5-turbo-1106",
   "knowledge_file": "knowledge.json",
   "tools": [
@@ -18,20 +18,49 @@
       "type": "function",
       "function": {
         "name": "check_scheduled_events",
-        "description": "Retrieve the scheduled events for a given date range. The assistant will determine if there are any conflicts and return the available times.",
+        "description": "Checks for scheduled events within a given date range. The function returns a list of scheduled events that can be used to determine whether other services are already scheduled at the requested date/time.",
         "parameters": {
           "type": "object",
           "properties": {
             "inquiry_start_date": {
               "type": "string",
-              "description": "A date like string for the inquiry date with format MM-DD-YYYY."
+              "description": "The start date for checking scheduled events, formatted as MM-DD-YYYY."
             },
             "inquiry_end_date": {
               "type": "string",
-              "description": "An optional date like string for the limit date inquiry date with format MM-DD-YYYY. If not provided, the end date will be the the start date plus 1 week"
+              "description": "The end date for checking scheduled events, formatted as MM-DD-YYYY. Defaults to one week after the start date if not provided."
             }
           },
-          "required": ["inquiry_start_date"]
+          "required": ["inquiry_start_date"],
+          "return": {
+            "type": "object",
+            "properties": {
+              "events": {
+                "type": "array",
+                "description": "List of events scheduled within the specified date range.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "The name of the event."
+                    },
+                    "start": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "The start date and time of the event in ISO 8601 format."
+                    },
+                    "end": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "The end date and time of the event in ISO 8601 format."
+                    }
+                  },
+                  "required": ["name", "start", "end"]
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -39,28 +68,72 @@
       "type": "function",
       "function": {
         "name": "schedule_event",
-        "description": "Schedule a new event on the calendar for the date and time requested by the user. The user should provide the date and start time of the service they are willing to book, the end time is determined by the average duration of the service, or default to one hour duration from start time",
+        "description": "Schedules a new event on the calendar for the date and time requested by the customer, ensuring no scheduling conflicts exist. The function first checks for conflicts using 'check_scheduled_events'. If no conflicts are found, the event is scheduled. The end time of the event is calculated based on the average duration of the service, or defaults to one hour from the start time.",
         "parameters": {
           "type": "object",
           "properties": {
             "service_name": {
               "type": "string",
-              "description": "A date like string for the inquiry date with format MM-DD-YYYY."
+              "description": "Name of the service to be scheduled."
             },
             "service_schedule_date": {
               "type": "string",
-              "description": "A date like string that represents the date that the service is being schedule with format MM-DD-YYYY."
+              "description": "The date for scheduling the service, formatted as MM-DD-YYYY."
             },
             "service_schedule_time": {
               "type": "string",
-              "description": "A string that represents the time that the service is being schedule with format HH:mm"
+              "description": "The start time for the service, formatted as HH:mm."
+            },
+            "working_hours_start": {
+              "type": "string",
+              "description": "The start time of the business's working hours that is set up in the knowledge file, formatted as HH:mm."
+            },
+            "working_hours_end": {
+              "type": "string",
+              "description": "The end time of the business's working hours that is set up in the knowledge file, formatted as HH:mm."
+            },
+            "scheduled_events": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "The name of the event."
+                  },
+                  "start": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The start date and time of the event in ISO 8601 format."
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "The end date and time of the event in ISO 8601 format."
+                  }
+                },
+                "required": ["name", "start", "end"]
+              },
+              "description": "The list of events scheduled, returned by 'check_scheduled_events'."
             }
           },
           "required": [
             "service_name",
             "service_schedule_date",
-            "service_schedule_time"
-          ]
+            "service_schedule_time",
+            "working_hours_start",
+            "working_hours_end",
+            "scheduled_events"
+          ],
+          "dependencies": {
+            "check_scheduled_events": {
+              "description": "This function must be called prior to 'schedule_event' to check for any scheduling conflicts on the requested date and time."
+            }
+          },
+          "return": {
+            "type": "string",
+            "description": "A message with the outcome of the attempt to schedule the event. It can be either confirmed, or ask for a different date and time in case there's any issue with the requested date"
+          }
         }
       }
     }
