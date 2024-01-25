@@ -30,12 +30,12 @@ def start_conversation():
   Starts a new conversation by creating a new thread and returning the thread ID.
 
   Returns:
-    A JSON response containing the thread ID.
+    str: The ID of the thread created.
   """
   print("Starting a new conversation...")
   thread = client.beta.threads.create()
   print(f"New thread created with ID: {thread.id}")
-  return {"thread_id": thread.id}
+  return thread.id
 
 
 # Generate response

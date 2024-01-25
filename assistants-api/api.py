@@ -18,7 +18,8 @@ def start():
     500: If an error occurs while processing the request.
   """
   try:
-    return start_conversation()
+    thread_id = start_conversation()
+    return jsonify({"thread_id": thread_id})
   except Exception as e:
     print(e)
     return jsonify({"error": "Internal Server Error"}), 500
