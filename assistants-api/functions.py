@@ -17,6 +17,20 @@ def check_scheduled_events(inquiry_start_date, inquiry_end_date=None):
   }).json()
 
 def schedule_event(service_name, service_schedule_date, service_schedule_time, working_hours_start, working_hours_end, scheduled_events):
+  """
+  Schedule an event based on the given parameters.
+
+  Args:
+    service_name (str): The name of the service.
+    service_schedule_date (str): The date of the service schedule in the format 'mm-dd-yyyy'.
+    service_schedule_time (str): The time of the service schedule in the format 'HH:MM'.
+    working_hours_start (str): The start time of the working hours in the format 'HH:MM'.
+    working_hours_end (str): The end time of the working hours in the format 'HH:MM'.
+    scheduled_events (list): A list of dictionaries representing the scheduled events, each containing 'start' and 'end' keys with datetime strings in the format 'YYYY-MM-DDTHH:MM:SS±HH:MM'.
+
+  Returns:
+    str: A success message if the service is scheduled successfully, or an error message if there is a conflict or the requested time is outside working hours.
+  """
   print("Scheduling event with parameters: ", service_name, service_schedule_date, service_schedule_time, working_hours_start, working_hours_end, scheduled_events)
   # Define the timezone
   current_timezone = pytz.timezone(system_timezone)
