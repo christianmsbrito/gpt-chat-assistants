@@ -78,7 +78,6 @@ def generate_response(thread_id, message):
     # Retrieve and return the latest message from the assistant
     response = get_latest_message(thread_id)
 
-    print(f"Assistant response: {response}")
     return response
 
   except Exception as e:
