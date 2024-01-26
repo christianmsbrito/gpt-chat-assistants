@@ -12,6 +12,12 @@ const router = express.Router();
 async function googleAuthMiddleware(req, res, next) {
   try {
     req.auth = await authorize();
+    if (req.path === "/redirect") {
+      return next();
+    }
+    if (!fs.existsSync("token.json")) {
+      return res.status(403).send({ message: "Google Calendar is not Authorized!" });
+    }
     next();
   } catch (error) {
     console.error("An error occurred during authorization:", error);
@@ -19,23 +25,16 @@ async function googleAuthMiddleware(req, res, next) {
   }
 }
 
-router.use("/", async (req, res, next) => {
-  try {
-    req.auth = await authorize();
-    next();
-  } catch (error) {
-    console.error("An error occurred during authorization:", error);
-    res.status(500).send("Internal Server Error");
-  }
-});
-
 router.get("/events", googleAuthMiddleware, async (req, res) => {
   try {
     const queryObject = req.query;
     const startDate = new Date(queryObject.inquiryStartDate);
-    const endDate = queryObject.inquiryEndDate
+    let endDate = queryObject.inquiryEndDate
       ? new Date(queryObject.inquiryEndDate)
       : undefined;
+    if (endDate) {
+      endDate.setHours(23, 59, 59, 999); // Set end of day
+    }
     console.log(
       "Request received for availability with parameters: ",
       queryObject
@@ -126,7 +125,7 @@ router.get("/authorize", async (req, res) => {
 
 router.get("/redirect", googleAuthMiddleware, (req, res) => {
   const oAuth2Client = req.auth;
-  
+
   oAuth2Client.getToken(req.query.code, (err, token) => {
     if (err) return console.error("Error retrieving access token", err);
     oAuth2Client.setCredentials(token);

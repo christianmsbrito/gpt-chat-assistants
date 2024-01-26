@@ -7,7 +7,7 @@ const port = 3000;
 
 // Import routes from google-calendar.js
 // Use the routes
-app.use("/", googleCalendarRoutes);
+app.use("/calendar", googleCalendarRoutes);
 
 app.use((req, res) => {
   res.status(404).send("Not Found");
