@@ -22,29 +22,32 @@ export default class Bot {
   }
 
   private async handleCommand(message: venom.Message) {
-    if (!message.isGroupMsg && message.from.includes('981035162')) {
+    const isAllowedSender = message.from.includes('981035162') || message.from.includes('981553840');
+    if (!message.isGroupMsg && isAllowedSender) {
       console.log("Message Received From Grande Pinto:", message);
       const replyMessage = { to: message.from } as ISendTextParameters;
       try {
-        // const requestBody = {
-        //   thread_id: "thread_lUkCTJzEamrPi72GqfyD7M6a",
-        //   message: message.content,
-        // };
+        let threadId: string;
+        if (sessions.has(message.from)) {
+          threadId = sessions.get(message.from)!;
+        } else {
+          threadId = (await this.coreApiService.startNewThread()).thread_id;
+          this.setSession(message.from, threadId);
+        }
 
-        // const response = await axios.post("http://localhost:8080/chat", requestBody);
-        // Assign the "response" attribute returned in the response to a constant
-        // Use the responseAttribute as needed
-        // const content = response.data?.response;
+        const data = await this.coreApiService.generateChatResponse({
+          content: message.content,
+          threadId,
+        });
 
-        // replyMessage.text = content as string;
+        replyMessage.text = data.response;
       } catch (error: any) {
         Object.assign(replyMessage, {
           onSuccess: () => console.error(error),
           text: error.message ?? 'An error occurred',
         });
       } finally {
-        // this.client.
-        // await this.sendText(replyMessage);
+        await this.sendText(replyMessage);
       }
 
     }
@@ -57,5 +60,12 @@ export default class Bot {
     onError = console.error,
   }: ISendTextParameters): Promise<void> {
     await this.client.sendText(to, text).then(onSuccess).catch(onError);
+  }
+
+  private setSession(sender: string, threadId: string): void {
+    sessions.set(sender, threadId);
+    setTimeout(() => {
+      sessions.delete(sender);
+    }, 60 * 60 * 1000); // 1 hour
   }
 }
